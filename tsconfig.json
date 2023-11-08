@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": ["node"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": [
+      "es6"
+    ]
+  },
+  "include": ["demo.ts"]
+}
