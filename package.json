@@ -1,6 +1,6 @@
 {
   "name": "swc-plugin-react-native-esbuild-module",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Custom module plugin for @react-native-esbuild",
   "author": "Geunhyeok LEE <dev.ghlee@gmail.com>",
   "license": "MIT",
