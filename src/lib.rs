@@ -11,9 +11,15 @@ use tracing::debug;
 
 const GLOBAL: &str = "global";
 const MODULE: &str = "__modules";
+const MODULE_GET_METHOD_NAME: &str = "get";
 
-#[derive(Default)]
 pub struct ReactNativeEsbuildModule;
+
+impl Default for ReactNativeEsbuildModule {
+    fn default() -> Self {
+        ReactNativeEsbuildModule {}
+    }
+}
 
 impl ReactNativeEsbuildModule {
     fn global_module_from_default_import(
@@ -66,21 +72,26 @@ impl ReactNativeEsbuildModule {
     }
 
     fn get_custom_module_expr(&mut self, module_name: &String) -> Expr {
-        Expr::Member(MemberExpr {
+        Expr::Call(CallExpr {
             span: DUMMY_SP,
-            obj: Box::new(Expr::Member(MemberExpr {
+            callee: Callee::Expr(Box::new(Expr::Member(MemberExpr {
                 span: DUMMY_SP,
-                obj: Box::new(Expr::Ident(Ident::new(js_word!(GLOBAL), DUMMY_SP))),
-                prop: MemberProp::Ident(Ident::new(js_word!(MODULE), DUMMY_SP)),
-            })),
-            prop: MemberProp::Computed(ComputedPropName {
-                span: DUMMY_SP,
+                obj: Box::new(Expr::Member(MemberExpr {
+                    span: DUMMY_SP,
+                    obj: Box::new(Expr::Ident(Ident::new(js_word!(GLOBAL), DUMMY_SP))),
+                    prop: MemberProp::Ident(Ident::new(js_word!(MODULE), DUMMY_SP)),
+                })),
+                prop: MemberProp::Ident(Ident::new(js_word!(MODULE_GET_METHOD_NAME), DUMMY_SP)),
+            }))),
+            args: vec![ExprOrSpread {
                 expr: Box::new(Expr::Lit(Lit::Str(Str {
                     span: DUMMY_SP,
                     raw: None,
                     value: module_name.to_owned().into(),
                 }))),
-            }),
+                spread: None,
+            }],
+            type_args: None,
         })
     }
 
@@ -122,7 +133,10 @@ impl VisitMut for ReactNativeEsbuildModule {
                         .into_iter()
                         .for_each(|import_spec| match import_spec {
                             ImportSpecifier::Named(named_spec) => {
-                                debug!("named import: {:#?}.{:#?}", module_name, named_spec.local.sym);
+                                debug!(
+                                    "named import: {:#?}.{:#?}",
+                                    module_name, named_spec.local.sym
+                                );
                                 body.push(
                                     self.global_module_from_named_import(named_spec, module_name),
                                 );

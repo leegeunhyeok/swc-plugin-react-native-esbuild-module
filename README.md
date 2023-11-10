@@ -12,7 +12,33 @@ yarn add react-native-esbuild-module-plugin
 
 ## Usage
 
-Add plugin to your swc options.
+Inject global module manager to top of bundle.
+
+```js
+!((global) => {
+  const _m: {};
+  global.__modules = {
+    get(moduleName) {
+      return (
+        _m[moduleName] ||
+        (() => {
+          throw new Error(`"${moduleName}" module not found`);
+        })()
+      );
+    },
+  };
+})(
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : typeof global !== 'undefined'
+    ? global
+    : typeof window !== 'undefined'
+    ? window
+    : this,
+);
+```
+
+and add plugin to your swc options.
 
 ```ts
 import { transform } from '@swc/core';
@@ -42,14 +68,14 @@ export function MyComponent (): JSX.Element {
 }
 
 // After
-var React = global.__modules["react"].default;
-var useState = global.__modules["react"].useState;
-var useEffect = global.__modules["react"].useEffect;
-var Container = global.__modules["@app/components"].Container;
-var Section = global.__modules["@app/components"].Section;
-var Button = global.__modules["@app/components"].Button;
-var Text = global.__modules["@app/components"].Text;
-var useCustomHook = global.__modules["@app/hooks"].useCustomHook;
+var React = global.__modules.get("react").default;
+var useState = global.__modules.get("react").useState;
+var useEffect = global.__modules.get("react").useEffect;
+var Container = global.__modules.get("@app/components").Container;
+var Section = global.__modules.get("@app/components").Section;
+var Button = global.__modules.get("@app/components").Button;
+var Text = global.__modules.get("@app/components").Text;
+var useCustomHook = global.__modules.get("@app/hooks").useCustomHook;
 
 export function MyComponent () {
   // ...

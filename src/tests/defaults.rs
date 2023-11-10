@@ -11,7 +11,7 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var React = global.__modules["react"].default;
+    var React = global.__modules.get("react").default;
     "#
 );
 
@@ -25,8 +25,8 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var useState = global.__modules["react"].useState;
-    var useContext = global.__modules["react"].useContext;
+    var useState = global.__modules.get("react").useState;
+    var useContext = global.__modules.get("react").useContext;
     "#
 );
 
@@ -40,8 +40,8 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var React = global.__modules["react"].default;
-    var useState = global.__modules["react"].useState;
-    var useContext = global.__modules["react"].useContext;
+    var React = global.__modules.get("react").default;
+    var useState = global.__modules.get("react").useState;
+    var useContext = global.__modules.get("react").useContext
     "#
 );
