@@ -7,17 +7,15 @@ use swc_core::{
         visit::{as_folder, FoldWith, VisitMut},
     },
 };
+use tracing::debug;
 
 const GLOBAL: &str = "global";
 const MODULE: &str = "__modules";
 
+#[derive(Default)]
 pub struct ReactNativeEsbuildModule;
 
 impl ReactNativeEsbuildModule {
-    pub fn default() -> ReactNativeEsbuildModule {
-        ReactNativeEsbuildModule
-    }
-
     fn global_module_from_default_import(
         &mut self,
         default_spec: ImportDefaultSpecifier,
@@ -48,6 +46,7 @@ impl ReactNativeEsbuildModule {
     ) -> ModuleItem {
         let local = named_spec.local.to_owned();
         let member_sym = named_spec.local.sym;
+
         ModuleItem::Stmt(Stmt::Decl(Decl::Var(Box::new(VarDecl {
             span: DUMMY_SP,
             kind: VarDeclKind::Var,
@@ -122,12 +121,21 @@ impl VisitMut for ReactNativeEsbuildModule {
                         .to_owned()
                         .into_iter()
                         .for_each(|import_spec| match import_spec {
-                            ImportSpecifier::Named(named_spec) => body.push(
-                                self.global_module_from_named_import(named_spec, module_name),
-                            ),
-                            ImportSpecifier::Default(default_spec) => body.push(
-                                self.global_module_from_default_import(default_spec, module_name),
-                            ),
+                            ImportSpecifier::Named(named_spec) => {
+                                debug!("named import: {:#?}.{:#?}", module_name, named_spec.local.sym);
+                                body.push(
+                                    self.global_module_from_named_import(named_spec, module_name),
+                                );
+                            }
+                            ImportSpecifier::Default(default_spec) => {
+                                debug!("default import: {:#?}", module_name);
+                                body.push(
+                                    self.global_module_from_default_import(
+                                        default_spec,
+                                        module_name,
+                                    ),
+                                );
+                            }
                             _ => {}
                         });
                     true
