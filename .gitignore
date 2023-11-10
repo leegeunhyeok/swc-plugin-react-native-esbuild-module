@@ -4,3 +4,5 @@ target
 
 node_modules/
 .swc/
+
+.DS_Store
