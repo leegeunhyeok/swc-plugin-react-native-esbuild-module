@@ -2,6 +2,9 @@
 
 Transform module imports statement for [@react-native-esbuild](https://github.com/leegeunhyeok/react-native-esbuild)'s custom module system.
 
+> [!WARNING]
+> This plugin is for custom module system to implement Hot Module Replacement(HMR) in some bundlers that don't support it.
+
 ## Installation
 
 ```bash
