@@ -1,7 +1,7 @@
 mod module_collector;
 mod utils;
 
-use module_collector::{ModuleCollector, ModuleMeta, ModuleType};
+use module_collector::{ModuleCollector, ImportModule, ModuleType};
 use swc_core::common::Span;
 use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
 use swc_core::{
@@ -75,7 +75,7 @@ impl VisitMut for ReactNativeEsbuildModule {
         imports.into_iter().enumerate().for_each(
             |(
                 index,
-                ModuleMeta {
+                ImportModule {
                     span,
                     ident,
                     module_src,

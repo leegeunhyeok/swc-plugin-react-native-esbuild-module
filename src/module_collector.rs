@@ -7,7 +7,7 @@ use swc_core::{
 };
 use tracing::debug;
 
-pub type Import = Vec<ModuleMeta>;
+pub type Import = Vec<ImportModule>;
 
 #[derive(Debug)]
 pub enum ModuleType {
@@ -16,7 +16,7 @@ pub enum ModuleType {
 }
 
 #[derive(Debug)]
-pub struct ModuleMeta {
+pub struct ImportModule {
     pub span: Span,
     pub ident: Ident,
     pub module_src: String,
@@ -46,9 +46,8 @@ impl VisitMut for ModuleCollector {
             match module_item {
                 ModuleItem::Stmt(stmt) => module_body.push(stmt.into()),
                 ModuleItem::ModuleDecl(mut module_decl) => match module_decl {
-                    ModuleDecl::Import(_) => {
-                        module_decl.visit_mut_with(self);
-                    }
+                    // Imports
+                    ModuleDecl::Import(_) => module_decl.visit_mut_with(self),
                     _ => module_body.push(module_decl.into()),
                 },
             };
@@ -64,7 +63,7 @@ impl VisitMut for ModuleCollector {
             .for_each(|import_spec| match import_spec {
                 ImportSpecifier::Default(ImportDefaultSpecifier { span, local }) => {
                     debug!("default import: {:#?}", local.sym);
-                    self.imports.push(ModuleMeta {
+                    self.imports.push(ImportModule {
                         span,
                         ident: local,
                         module_src: import_decl.src.value.to_string(),
@@ -73,7 +72,7 @@ impl VisitMut for ModuleCollector {
                 }
                 ImportSpecifier::Named(ImportNamedSpecifier { span, local, .. }) => {
                     debug!("named import: {:#?}", local.sym);
-                    self.imports.push(ModuleMeta {
+                    self.imports.push(ImportModule {
                         span,
                         ident: local,
                         module_src: import_decl.src.value.to_string(),
