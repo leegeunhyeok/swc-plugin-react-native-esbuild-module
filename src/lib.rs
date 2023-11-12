@@ -108,5 +108,5 @@ pub fn react_native_esbuild_module_plugin(
 }
 
 #[cfg(test)]
-#[path = "./tests/defaults.rs"]
-mod defaults;
+#[path = "./tests/esm_import.rs"]
+mod esm_import;
