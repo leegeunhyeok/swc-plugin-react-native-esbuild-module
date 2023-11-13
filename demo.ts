@@ -32,6 +32,8 @@ export function MyComponent (): JSX.Element {
     </Container>
   );
 };
+
+export default class {}
 `;
 
 ;(async () => {
@@ -47,7 +49,7 @@ export function MyComponent (): JSX.Element {
           [resolve('target/wasm32-wasi/release/swc_plugin_react_native_esbuild_module.wasm'), {}],
         ],
       },
-      externalHelpers: true,
+      externalHelpers: false,
     },
   });
 

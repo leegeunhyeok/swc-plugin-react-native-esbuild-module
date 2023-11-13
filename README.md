@@ -19,15 +19,18 @@ Inject global module manager to top of bundle.
 
 ```js
 !((global) => {
-  const _m: {};
+  const __m: {};
   global.__modules = {
-    get(moduleName) {
+    import(moduleName) {
       return (
-        _m[moduleName] ||
+        __m[moduleName] ||
         (() => {
           throw new Error(`"${moduleName}" module not found`);
         })()
       );
+    },
+    export(moduleName, exports) {
+      return __m[moduleName] = exports;
     },
   };
 })(
@@ -50,41 +53,58 @@ await transform(code, {
   jsc: {
     experimental: {
       plugins: [
-        // Add plugin here
+        // Add plugin here.
         ['react-native-esbuild-module-plugin', {}],
       ],
     },
+    externalHelpers: false, // You should disable external helpers.
   },
 });
 ```
 
 ## Preview
 
+Before
+
 ```ts
-// Before
 import React, { useState, useEffect } from 'react';
 import { Container, Section, Button, Text } from '@app/components';
 import { useCustomHook } from '@app/hooks';
+import * as app from '@app/core';
 
 export function MyComponent (): JSX.Element {
   // ...
 }
 
-// After
-var React = global.__modules.get("react").default;
-var useState = global.__modules.get("react").useState;
-var useEffect = global.__modules.get("react").useEffect;
-var Container = global.__modules.get("@app/components").Container;
-var Section = global.__modules.get("@app/components").Section;
-var Button = global.__modules.get("@app/components").Button;
-var Text = global.__modules.get("@app/components").Text;
-var useCustomHook = global.__modules.get("@app/hooks").useCustomHook;
+// anonymous class
+export default class {}
+```
 
-export function MyComponent () {
+After
+
+```js
+var React = global.__modules.import("react").default;
+var useState = global.__modules.import("react").useState;
+var useEffect = global.__modules.import("react").useEffect;
+var Container = global.__modules.import("@app/components").Container;
+var Section = global.__modules.import("@app/components").Section;
+var Button = global.__modules.import("@app/components").Button;
+var Text = global.__modules.import("@app/components").Text;
+var useCustomHook = global.__modules.import("@app/hooks").useCustomHook;
+var app = global.__modules.import("@app/core");
+
+function MyComponent () {
   // ...
 }
+
+var __export_default = class {}
+
+global.__modules.export("<module-file-name>", {
+  "MyComponent": MyComponent,
+  "default": __export_default
+});
 ```
 
 ## License
 
-[LICENSE](./LICENSE)
+[MIT](./LICENSE)

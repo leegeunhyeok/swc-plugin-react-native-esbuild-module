@@ -11,7 +11,7 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var React = global.__modules.get("react").default;
+    var React = global.__modules.import("react").default;
     "#
 );
 
@@ -25,8 +25,8 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var useState = global.__modules.get("react").useState;
-    var useContext = global.__modules.get("react").useContext;
+    var useState = global.__modules.import("react").useState;
+    var useContext = global.__modules.import("react").useContext;
     "#
 );
 
@@ -40,9 +40,23 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var React = global.__modules.get("react").default;
-    var useState = global.__modules.get("react").useState;
-    var useContext = global.__modules.get("react").useContext
+    var React = global.__modules.import("react").default;
+    var useState = global.__modules.import("react").useState;
+    var useContext = global.__modules.import("react").useContext
+    "#
+);
+
+test!(
+    Default::default(),
+    |_| as_folder(ReactNativeEsbuildModule::default()),
+    import_all,
+    // Input codes
+    r#"
+    import * as ReactAll from 'react';
+    "#,
+    // Output codes after transformed with plugin
+    r#"
+    var ReactAll = global.__modules.import("react");
     "#
 );
 
@@ -58,9 +72,9 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var React = global.__modules.get("react").default;
-    var useState = global.__modules.get("react").useState;
-    var useContext = global.__modules.get("react").useContext;
+    var React = global.__modules.import("react").default;
+    var useState = global.__modules.import("react").useState;
+    var useContext = global.__modules.import("react").useContext;
     function testFn() {}
     class TestClass {}
     "#
