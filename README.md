@@ -54,10 +54,14 @@ await transform(code, {
     experimental: {
       plugins: [
         // Add plugin here.
-        ['react-native-esbuild-module-plugin', {}],
+        ['react-native-esbuild-module-plugin', {
+          // convert import statements to custom module system.
+          // Defaults to `false`
+          convertImport: true,
+        }],
       ],
     },
-    externalHelpers: false, // You should disable external helpers.
+    externalHelpers: false, // You should disable external helpers when convertImport is `true`
   },
 });
 ```
@@ -83,6 +87,7 @@ export default class {}
 After
 
 ```js
+// with `convertImport: true`
 var React = global.__modules.import("react").default;
 var useState = global.__modules.import("react").useState;
 var useEffect = global.__modules.import("react").useEffect;

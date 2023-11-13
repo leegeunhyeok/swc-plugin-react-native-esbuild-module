@@ -56,9 +56,18 @@ impl ExportModule {
 pub struct ModuleCollector {
     pub imports: Vec<ImportModule>,
     pub exports: Vec<ExportModule>,
+    convert_import: bool,
 }
 
 impl ModuleCollector {
+    pub fn default(convert_import: bool) -> Self {
+        ModuleCollector {
+            convert_import,
+            imports: Vec::new(),
+            exports: Vec::new(),
+        }
+    }
+
     fn get_export_decl_stmt_with_private_ident(&mut self, expr: Expr) -> (Ident, Stmt) {
         let export_ident: Ident = private_ident!("__export_default");
         let stmt = decl_var_and_assign_stmt(export_ident.clone(), DUMMY_SP, expr);
@@ -126,15 +135,6 @@ impl ModuleCollector {
     }
 }
 
-impl Default for ModuleCollector {
-    fn default() -> Self {
-        ModuleCollector {
-            imports: Vec::new(),
-            exports: Vec::new(),
-        }
-    }
-}
-
 impl VisitMut for ModuleCollector {
     fn visit_mut_module(&mut self, module: &mut Module) {
         let mut module_body = Vec::with_capacity(module.body.len());
@@ -143,7 +143,13 @@ impl VisitMut for ModuleCollector {
                 ModuleItem::Stmt(stmt) => module_body.push(stmt.into()),
                 ModuleItem::ModuleDecl(mut module_decl) => match &module_decl {
                     // Imports
-                    ModuleDecl::Import(_) => module_decl.visit_mut_with(self),
+                    ModuleDecl::Import(_) => {
+                        if self.convert_import {
+                            module_decl.visit_mut_with(self);
+                        } else {
+                            module_body.push(module_decl.into());
+                        }
+                    }
                     // Exports
                     // `export var ...`
                     // `export class ...`

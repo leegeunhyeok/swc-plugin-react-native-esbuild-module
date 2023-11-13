@@ -2,6 +2,7 @@ mod module_collector;
 mod utils;
 
 use module_collector::{ExportModule, ImportModule, ModuleCollector, ModuleType};
+use serde::Deserialize;
 use swc_core::common::Span;
 use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
 use swc_core::{
@@ -22,14 +23,22 @@ const MODULE: &str = "__modules";
 const MODULE_IMPORT_METHOD_NAME: &str = "import";
 const MODULE_EXPORT_METHOD_NAME: &str = "export";
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReactNativeEsbuildModuleOptions {
+    convert_import: Option<bool>,
+}
+
 pub struct ReactNativeEsbuildModule {
     module_name: String,
+    convert_import: bool,
 }
 
 impl ReactNativeEsbuildModule {
-    fn default(filename: String) -> Self {
+    fn default(filename: String, convert_import: bool) -> Self {
         ReactNativeEsbuildModule {
             module_name: filename,
+            convert_import,
         }
     }
 }
@@ -146,10 +155,12 @@ impl VisitMut for ReactNativeEsbuildModule {
     noop_visit_mut_type!();
 
     fn visit_mut_module(&mut self, module: &mut Module) {
-        let mut collector = ModuleCollector::default();
+        let mut collector = ModuleCollector::default(self.convert_import);
         module.visit_mut_with(&mut collector);
 
-        let ModuleCollector { imports, exports } = collector;
+        let ModuleCollector {
+            imports, exports, ..
+        } = collector;
 
         // Imports
         imports.into_iter().enumerate().for_each(
@@ -197,10 +208,21 @@ pub fn react_native_esbuild_module_plugin(
     program: Program,
     metadata: TransformPluginProgramMetadata,
 ) -> Program {
+    let config = serde_json::from_str::<ReactNativeEsbuildModuleOptions>(
+        &metadata
+            .get_transform_plugin_config()
+            .expect("failed to get plugin config for swc-plugin-react-native-esbuild-module"),
+    )
+    .expect("invalid config for swc-plugin-react-native-esbuild-module");
+
     let filename = metadata
         .get_context(&TransformPluginMetadataContextKind::Filename)
         .unwrap_or_default();
-    program.fold_with(&mut as_folder(ReactNativeEsbuildModule::default(filename)))
+
+    program.fold_with(&mut as_folder(ReactNativeEsbuildModule::default(
+        filename,
+        config.convert_import.unwrap_or(false),
+    )))
 }
 
 #[cfg(test)]
