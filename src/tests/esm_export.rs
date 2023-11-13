@@ -1,9 +1,16 @@
 use super::ReactNativeEsbuildModule;
-use swc_core::ecma::{transforms::testing::test, visit::as_folder};
+use swc_core::ecma::{
+    transforms::testing::test,
+    visit::{as_folder, Folder},
+};
+
+fn plugin() -> Folder<ReactNativeEsbuildModule> {
+    as_folder(ReactNativeEsbuildModule::default(String::from("test.js")))
+}
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_named_var_decl,
     // Input codes
     r#"
@@ -12,13 +19,13 @@ test!(
     // Output codes after transformed with plugin
     r#"
     const named = new Instance();
-    global.__modules.export("", { "named": named });
+    global.__modules.export("test.js", { "named": named });
     "#
 );
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_named_fn_decl,
     // Input codes
     r#"
@@ -31,13 +38,13 @@ test!(
     function namedFunction() {
         console.log('body');
     }
-    global.__modules.export("", { "namedFunction": namedFunction });
+    global.__modules.export("test.js", { "namedFunction": namedFunction });
     "#
 );
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_named,
     // Input codes
     r#"
@@ -45,7 +52,7 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    global.__modules.export("", {
+    global.__modules.export("test.js", {
         "plain": plain,
         "afterRename": beforeRename
     });
@@ -54,7 +61,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_named_with_alias,
     // Input codes
     r#"
@@ -63,13 +70,13 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_named = global.__modules.import("module");
-    global.__modules.export("", { "rename": __export_named });
+    global.__modules.export("test.js", { "rename": __export_named });
     "#
 );
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_default_expr,
     // Input codes
     r#"
@@ -78,7 +85,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_default = 0;
-    global.__modules.export("", {
+    global.__modules.export("test.js", {
         "default": __export_default
     });
     "#
@@ -86,7 +93,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_default_decl,
     // Input codes
     r#"
@@ -95,7 +102,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     class ClassDecl {}
-    global.__modules.export("", {
+    global.__modules.export("test.js", {
         "default": ClassDecl
     });
     "#
@@ -103,7 +110,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_default_decl_anonymous,
     // Input codes
     r#"
@@ -112,7 +119,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_default = class {}
-    global.__modules.export("", {
+    global.__modules.export("test.js", {
         "default": __export_default
     });
     "#
@@ -120,7 +127,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_all,
     // Input codes
     r#"
@@ -129,13 +136,13 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_all = global.__modules.import("module");
-    global.__modules.export("", { ...__export_all });
+    global.__modules.export("test.js", { ...__export_all });
     "#
 );
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_all_partial,
     // Input codes
     r#"
@@ -146,7 +153,7 @@ test!(
     var a = global.__modules.import("module").a;
     var b = global.__modules.import("module").b;
     var c = global.__modules.import("module").c;
-    global.__modules.export("", {
+    global.__modules.export("test.js", {
         "a": a,
         "b": b,
         "c": c
@@ -156,7 +163,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     export_mixed,
     // Input codes
     r#"
@@ -192,7 +199,7 @@ test!(
     var __export_default = class {
         init() {}
     };
-    global.__modules.export("", {
+    global.__modules.export("test.js", {
         "MyComponent": MyComponent,
         "default": __export_default
     });

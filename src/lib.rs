@@ -11,6 +11,7 @@ use swc_core::{
         ast::*,
         visit::{as_folder, noop_visit_mut_type, FoldWith, VisitMut, VisitMutWith},
     },
+    plugin::metadata::TransformPluginMetadataContextKind,
 };
 use utils::{
     call_expr, decl_var_and_assign_stmt, fn_arg, ident, ident_expr, obj_member_expr, str_lit_expr,
@@ -25,10 +26,10 @@ pub struct ReactNativeEsbuildModule {
     module_name: String,
 }
 
-impl Default for ReactNativeEsbuildModule {
-    fn default() -> Self {
+impl ReactNativeEsbuildModule {
+    fn default(filename: String) -> Self {
         ReactNativeEsbuildModule {
-            module_name: String::from(""), // TODO
+            module_name: filename,
         }
     }
 }
@@ -194,9 +195,12 @@ impl VisitMut for ReactNativeEsbuildModule {
 #[plugin_transform]
 pub fn react_native_esbuild_module_plugin(
     program: Program,
-    _metadata: TransformPluginProgramMetadata,
+    metadata: TransformPluginProgramMetadata,
 ) -> Program {
-    program.fold_with(&mut as_folder(ReactNativeEsbuildModule::default()))
+    let filename = metadata
+        .get_context(&TransformPluginMetadataContextKind::Filename)
+        .unwrap_or_default();
+    program.fold_with(&mut as_folder(ReactNativeEsbuildModule::default(filename)))
 }
 
 #[cfg(test)]

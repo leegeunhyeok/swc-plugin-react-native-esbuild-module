@@ -39,6 +39,7 @@ export default class {}
 ;(async () => {
   const { code: outputCode } = await transform(inputCode, {
     isModule: true,
+    filename: 'demo.tsx',
     jsc: {
       parser: {
         syntax: 'typescript',

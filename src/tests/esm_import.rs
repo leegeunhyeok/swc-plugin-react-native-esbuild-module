@@ -1,9 +1,16 @@
 use super::ReactNativeEsbuildModule;
-use swc_core::ecma::{transforms::testing::test, visit::as_folder};
+use swc_core::ecma::{
+    transforms::testing::test,
+    visit::{as_folder, Folder},
+};
+
+fn plugin() -> Folder<ReactNativeEsbuildModule> {
+    as_folder(ReactNativeEsbuildModule::default(String::from("test.js")))
+}
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     default_import,
     // Input codes
     r#"
@@ -17,7 +24,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     named_import,
     // Input codes
     r#"
@@ -32,7 +39,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     mixed_import,
     // Input codes
     r#"
@@ -48,7 +55,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     import_all,
     // Input codes
     r#"
@@ -62,7 +69,7 @@ test!(
 
 test!(
     Default::default(),
-    |_| as_folder(ReactNativeEsbuildModule::default()),
+    |_| plugin(),
     import_with_stmt,
     // Input codes
     r#"
