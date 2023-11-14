@@ -57,7 +57,7 @@ await transform(code, {
         ['react-native-esbuild-module-plugin', {
           // convert import statements to custom module system.
           // Defaults to `false`
-          convertImport: true,
+          convertImports: true,
         }],
       ],
     },
@@ -98,11 +98,12 @@ var Text = global.__modules.import("@app/components").Text;
 var useCustomHook = global.__modules.import("@app/hooks").useCustomHook;
 var app = global.__modules.import("@app/core");
 
-function MyComponent () {
+export function MyComponent () {
   // ...
 }
 
 var __export_default = class {}
+export default __export_default;
 
 global.__modules.export("<module-file-name>", {
   "MyComponent": MyComponent,

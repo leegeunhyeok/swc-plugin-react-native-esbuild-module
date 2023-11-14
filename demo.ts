@@ -48,7 +48,7 @@ export default class {}
       experimental: {
         plugins: [
           [resolve('target/wasm32-wasi/release/swc_plugin_react_native_esbuild_module.wasm'), {
-            convertImport: true,
+            convertImports: true,
           }],
         ],
       },

@@ -56,13 +56,13 @@ impl ExportModule {
 pub struct ModuleCollector {
     pub imports: Vec<ImportModule>,
     pub exports: Vec<ExportModule>,
-    convert_import: bool,
+    convert_imports: bool,
 }
 
 impl ModuleCollector {
-    pub fn default(convert_import: bool) -> Self {
+    pub fn default(convert_imports: bool) -> Self {
         ModuleCollector {
-            convert_import,
+            convert_imports,
             imports: Vec::new(),
             exports: Vec::new(),
         }
@@ -74,10 +74,14 @@ impl ModuleCollector {
         (export_ident, stmt)
     }
 
+    fn get_default_export_stmt(&mut self, ident: Ident) -> ModuleDecl {
+        ModuleDecl::ExportDefaultExpr(ExportDefaultExpr { span: DUMMY_SP, expr: Box::new(Expr::Ident(ident)) })
+    }
+
     fn collect_default_export_decl_and_convert_to_stmt(
         &mut self,
         export_default_decl: &ExportDefaultDecl,
-    ) -> Option<Stmt> {
+    ) -> Option<(Ident, Stmt)> {
         match &export_default_decl.decl {
             DefaultDecl::Fn(FnExpr {
                 ident: Some(fn_ident),
@@ -86,18 +90,21 @@ impl ModuleCollector {
             }) => {
                 debug!("default export decl fn: {:#?}", fn_ident.sym);
                 self.exports.push(ExportModule::default(fn_ident.clone()));
-                Some(Stmt::Decl(Decl::Fn(FnDecl {
-                    ident: fn_ident.to_owned(),
-                    function: function.to_owned(),
-                    declare: false,
-                })))
+                Some((
+                    fn_ident.to_owned(),
+                    Stmt::Decl(Decl::Fn(FnDecl {
+                        ident: fn_ident.to_owned(),
+                        function: function.to_owned(),
+                        declare: false,
+                    }))
+                ))
             }
             DefaultDecl::Fn(fn_expr) => {
                 debug!("default export decl fn: <anonymous>");
                 let (ident, stmt) =
                     self.get_export_decl_stmt_with_private_ident(Expr::Fn(fn_expr.to_owned()));
                 self.exports.push(ExportModule::default(ident.clone()));
-                Some(stmt)
+                Some((ident, stmt))
             }
             DefaultDecl::Class(ClassExpr {
                 ident: Some(class_ident),
@@ -107,18 +114,21 @@ impl ModuleCollector {
                 debug!("default export decl class: {:#?}", class_ident.sym);
                 self.exports
                     .push(ExportModule::default(class_ident.clone()));
-                Some(Stmt::Decl(Decl::Class(ClassDecl {
-                    ident: class_ident.to_owned(),
-                    class: class.to_owned(),
-                    declare: false,
-                })))
+                Some((
+                    class_ident.to_owned(),
+                    Stmt::Decl(Decl::Class(ClassDecl {
+                        ident: class_ident.to_owned(),
+                        class: class.to_owned(),
+                        declare: false,
+                    }))
+                ))
             }
             DefaultDecl::Class(class_expr) => {
                 debug!("default export decl class: <anonymous>");
                 let (ident, stmt) = self
                     .get_export_decl_stmt_with_private_ident(Expr::Class(class_expr.to_owned()));
                 self.exports.push(ExportModule::default(ident.clone()));
-                Some(stmt)
+                Some((ident, stmt))
             }
             _ => None,
         }
@@ -127,11 +137,11 @@ impl ModuleCollector {
     fn collect_default_export_expr_and_convert_to_stmt(
         &mut self,
         export_default_expr: &ExportDefaultExpr,
-    ) -> Stmt {
+    ) -> (Ident, Stmt) {
         let (ident, stmt) =
             self.get_export_decl_stmt_with_private_ident(*export_default_expr.expr.to_owned());
-        self.exports.push(ExportModule::default(ident));
-        stmt
+        self.exports.push(ExportModule::default(ident.clone()));
+        (ident, stmt)
     }
 }
 
@@ -144,7 +154,7 @@ impl VisitMut for ModuleCollector {
                 ModuleItem::ModuleDecl(mut module_decl) => match &module_decl {
                     // Imports
                     ModuleDecl::Import(_) => {
-                        if self.convert_import {
+                        if self.convert_imports {
                             module_decl.visit_mut_with(self);
                         } else {
                             module_body.push(module_decl.into());
@@ -154,36 +164,44 @@ impl VisitMut for ModuleCollector {
                     // `export var ...`
                     // `export class ...`
                     // `export function ...`
-                    ModuleDecl::ExportDecl(export_decl) => {
-                        module_body.push(ModuleItem::Stmt(Stmt::Decl(export_decl.decl.to_owned())));
+                    ModuleDecl::ExportDecl(_) => {
                         module_decl.visit_mut_with(self);
+                        module_body.push(module_decl.into());
                     }
                     // `export default function ...`
                     // `export default class ...`
                     ModuleDecl::ExportDefaultDecl(export_default_decl) => {
-                        if let Some(export_stmt) = self
+                        if let Some((ident, export_stmt)) = self
                             .collect_default_export_decl_and_convert_to_stmt(export_default_decl)
                         {
                             module_body.push(export_stmt.into());
+                            module_body.push(self.get_default_export_stmt(ident).into());
+                        } else {
+                            module_body.push(module_decl.into());
                         }
                     }
                     // `export default Identifier`
                     ModuleDecl::ExportDefaultExpr(export_default_expr) => {
-                        module_body.push(
-                            self.collect_default_export_expr_and_convert_to_stmt(
-                                export_default_expr,
-                            )
-                            .into(),
+                        let (ident, stmt) = self.collect_default_export_expr_and_convert_to_stmt(
+                            export_default_expr,
                         );
+                        module_body.push(stmt.into());
+                        module_body.push(self.get_default_export_stmt(ident).into());
                     }
                     // `export { ... }`
                     ModuleDecl::ExportNamed(NamedExport {
                         type_only: false, ..
-                    }) => module_decl.visit_mut_with(self),
+                    }) => {
+                        module_decl.visit_mut_with(self);
+                        module_body.push(module_decl.into());
+                    }
                     // `export * from ...`
                     ModuleDecl::ExportAll(ExportAll {
                         type_only: false, ..
-                    }) => module_decl.visit_mut_with(self),
+                    }) => {
+                        module_decl.visit_mut_with(self);
+                        module_body.push(module_decl.into());
+                    }
                     _ => module_body.push(module_decl.into()),
                 },
             };

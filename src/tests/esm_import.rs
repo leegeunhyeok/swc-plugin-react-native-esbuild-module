@@ -5,10 +5,10 @@ use swc_core::ecma::{
 };
 
 fn plugin() -> Folder<ReactNativeEsbuildModule> {
-    as_folder(ReactNativeEsbuildModule::default(
-        String::from("test.js"),
-        true,
-    ))
+    as_folder(ReactNativeEsbuildModule {
+        module_name: String::from("test.js"),
+        convert_imports: true,
+    })
 }
 
 test!(

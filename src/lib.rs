@@ -26,21 +26,12 @@ const MODULE_EXPORT_METHOD_NAME: &str = "export";
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ReactNativeEsbuildModuleOptions {
-    convert_import: Option<bool>,
+    convert_imports: Option<bool>,
 }
 
 pub struct ReactNativeEsbuildModule {
     module_name: String,
-    convert_import: bool,
-}
-
-impl ReactNativeEsbuildModule {
-    fn default(filename: String, convert_import: bool) -> Self {
-        ReactNativeEsbuildModule {
-            module_name: filename,
-            convert_import,
-        }
-    }
+    convert_imports: bool,
 }
 
 impl ReactNativeEsbuildModule {
@@ -155,7 +146,7 @@ impl VisitMut for ReactNativeEsbuildModule {
     noop_visit_mut_type!();
 
     fn visit_mut_module(&mut self, module: &mut Module) {
-        let mut collector = ModuleCollector::default(self.convert_import);
+        let mut collector = ModuleCollector::default(self.convert_imports);
         module.visit_mut_with(&mut collector);
 
         let ModuleCollector {
@@ -219,10 +210,10 @@ pub fn react_native_esbuild_module_plugin(
         .get_context(&TransformPluginMetadataContextKind::Filename)
         .unwrap_or_default();
 
-    program.fold_with(&mut as_folder(ReactNativeEsbuildModule::default(
-        filename,
-        config.convert_import.unwrap_or(false),
-    )))
+    program.fold_with(&mut as_folder(ReactNativeEsbuildModule {
+        module_name: filename,
+        convert_imports: config.convert_imports.unwrap_or(false),
+    }))
 }
 
 #[cfg(test)]

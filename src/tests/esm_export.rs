@@ -5,10 +5,10 @@ use swc_core::ecma::{
 };
 
 fn plugin() -> Folder<ReactNativeEsbuildModule> {
-    as_folder(ReactNativeEsbuildModule::default(
-        String::from("test.js"),
-        true,
-    ))
+    as_folder(ReactNativeEsbuildModule {
+        module_name: String::from("test.js"),
+        convert_imports: true,
+    })
 }
 
 test!(
@@ -21,7 +21,7 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    const named = new Instance();
+    export const named = new Instance();
     global.__modules.export("test.js", { "named": named });
     "#
 );
@@ -38,7 +38,7 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    function namedFunction() {
+    export function namedFunction() {
         console.log('body');
     }
     global.__modules.export("test.js", { "namedFunction": namedFunction });
@@ -51,10 +51,15 @@ test!(
     export_named,
     // Input codes
     r#"
+    const plain = 0;
+    const beforeRename = 1;
     export { plain, beforeRename as afterRename };
     "#,
     // Output codes after transformed with plugin
     r#"
+    const plain = 0;
+    const beforeRename = 1;
+    export { plain, beforeRename as afterRename };
     global.__modules.export("test.js", {
         "plain": plain,
         "afterRename": beforeRename
@@ -73,6 +78,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_named = global.__modules.import("module");
+    export * as rename from 'module';
     global.__modules.export("test.js", { "rename": __export_named });
     "#
 );
@@ -88,6 +94,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_default = 0;
+    export default __export_default;
     global.__modules.export("test.js", {
         "default": __export_default
     });
@@ -105,6 +112,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     class ClassDecl {}
+    export default ClassDecl;
     global.__modules.export("test.js", {
         "default": ClassDecl
     });
@@ -122,6 +130,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_default = class {}
+    export default __export_default;
     global.__modules.export("test.js", {
         "default": __export_default
     });
@@ -139,6 +148,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_all = global.__modules.import("module");
+    export * from 'module';
     global.__modules.export("test.js", { ...__export_all });
     "#
 );
@@ -156,6 +166,7 @@ test!(
     var a = global.__modules.import("module").a;
     var b = global.__modules.import("module").b;
     var c = global.__modules.import("module").c;
+    export { a, b, c } from 'module';
     global.__modules.export("test.js", {
         "a": a,
         "b": b,
@@ -184,6 +195,8 @@ test!(
             // empty
         }
     }
+
+    export { app, useCustomHook };
     "#,
     // Output codes after transformed with plugin
     r#"
@@ -196,15 +209,19 @@ test!(
     var Text = global.__modules.import("@app/components").Text;
     var useCustomHook = global.__modules.import("@app/hooks").useCustomHook;
     var app = global.__modules.import("@app/core");
-    function MyComponent() {
+    export function MyComponent() {
         return null;
     }
     var __export_default = class {
         init() {}
     };
+    export default __export_default;
+    export { app, useCustomHook };
     global.__modules.export("test.js", {
         "MyComponent": MyComponent,
-        "default": __export_default
+        "default": __export_default,
+        "app": app,
+        "useCustomHook": useCustomHook
     });
     "#
 );
