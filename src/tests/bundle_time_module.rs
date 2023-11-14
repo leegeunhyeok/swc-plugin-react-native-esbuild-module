@@ -7,21 +7,21 @@ use swc_core::ecma::{
 fn plugin() -> Folder<ReactNativeEsbuildModule> {
     as_folder(ReactNativeEsbuildModule {
         module_name: String::from("test.js"),
-        runtime_module: true,
+        runtime_module: false, // bundle time
     })
 }
 
 test!(
     Default::default(),
     |_| plugin(),
-    export_named_var_decl,
+    bundle_time_export_named_var_decl,
     // Input codes
     r#"
     export const named = new Instance();
     "#,
     // Output codes after transformed with plugin
     r#"
-    const named = new Instance();
+    export const named = new Instance();
     global.__modules.export("test.js", { "named": named });
     "#
 );
@@ -29,7 +29,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_named_fn_decl,
+    bundle_time_export_named_fn_decl,
     // Input codes
     r#"
     export function namedFunction() {
@@ -38,7 +38,7 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    function namedFunction() {
+    export function namedFunction() {
         console.log('body');
     }
     global.__modules.export("test.js", { "namedFunction": namedFunction });
@@ -48,7 +48,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_named,
+    bundle_time_export_named,
     // Input codes
     r#"
     const plain = 0;
@@ -59,6 +59,7 @@ test!(
     r#"
     const plain = 0;
     const beforeRename = 1;
+    export { plain, beforeRename as afterRename };
     global.__modules.export("test.js", {
         "plain": plain,
         "afterRename": beforeRename
@@ -69,7 +70,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_named_with_alias,
+    bundle_time_export_named_with_alias,
     // Input codes
     r#"
     export * as rename from 'module';
@@ -77,6 +78,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_named = global.__modules.import("module");
+    export * as rename from 'module';
     global.__modules.export("test.js", { "rename": __export_named });
     "#
 );
@@ -84,7 +86,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_default_expr,
+    bundle_time_export_default_expr,
     // Input codes
     r#"
     export default 0;
@@ -92,6 +94,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_default = 0;
+    export default __export_default;
     global.__modules.export("test.js", {
         "default": __export_default
     });
@@ -101,7 +104,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_default_decl,
+    bundle_time_export_default_decl,
     // Input codes
     r#"
     export default class ClassDecl {}
@@ -109,6 +112,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     class ClassDecl {}
+    export default ClassDecl;
     global.__modules.export("test.js", {
         "default": ClassDecl
     });
@@ -118,7 +122,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_default_decl_anonymous,
+    bundle_time_export_default_decl_anonymous,
     // Input codes
     r#"
     export default class {}
@@ -126,6 +130,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_default = class {}
+    export default __export_default;
     global.__modules.export("test.js", {
         "default": __export_default
     });
@@ -135,7 +140,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_all,
+    bundle_time_export_all,
     // Input codes
     r#"
     export * from 'module';
@@ -143,6 +148,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var __export_all = global.__modules.import("module");
+    export * from 'module';
     global.__modules.export("test.js", { ...__export_all });
     "#
 );
@@ -150,7 +156,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_all_partial,
+    bundle_time_export_all_partial,
     // Input codes
     r#"
     export { a, b, c } from 'module';
@@ -160,6 +166,7 @@ test!(
     var a = global.__modules.import("module").a;
     var b = global.__modules.import("module").b;
     var c = global.__modules.import("module").c;
+    export { a, b, c } from 'module';
     global.__modules.export("test.js", {
         "a": a,
         "b": b,
@@ -171,7 +178,7 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
-    export_mixed,
+    bundle_time_export_mixed,
     // Input codes
     r#"
     import React, { useState, useEffect } from 'react';
@@ -193,21 +200,18 @@ test!(
     "#,
     // Output codes after transformed with plugin
     r#"
-    var React = global.__modules.import("react").default;
-    var useState = global.__modules.import("react").useState;
-    var useEffect = global.__modules.import("react").useEffect;
-    var Container = global.__modules.import("@app/components").Container;
-    var Section = global.__modules.import("@app/components").Section;
-    var Button = global.__modules.import("@app/components").Button;
-    var Text = global.__modules.import("@app/components").Text;
-    var useCustomHook = global.__modules.import("@app/hooks").useCustomHook;
-    var app = global.__modules.import("@app/core");
-    function MyComponent() {
+    import React, { useState, useEffect } from 'react';
+    import { Container, Section, Button, Text } from '@app/components';
+    import { useCustomHook } from '@app/hooks';
+    import * as app from '@app/core';
+    export function MyComponent() {
         return null;
     }
     var __export_default = class {
         init() {}
     };
+    export default __export_default;
+    export { app, useCustomHook };
     global.__modules.export("test.js", {
         "MyComponent": MyComponent,
         "default": __export_default,

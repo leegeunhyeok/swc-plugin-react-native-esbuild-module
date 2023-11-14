@@ -56,13 +56,13 @@ impl ExportModule {
 pub struct ModuleCollector {
     pub imports: Vec<ImportModule>,
     pub exports: Vec<ExportModule>,
-    convert_imports: bool,
+    runtime_module: bool,
 }
 
 impl ModuleCollector {
-    pub fn default(convert_imports: bool) -> Self {
+    pub fn default(runtime_module: bool) -> Self {
         ModuleCollector {
-            convert_imports,
+            runtime_module,
             imports: Vec::new(),
             exports: Vec::new(),
         }
@@ -154,7 +154,7 @@ impl VisitMut for ModuleCollector {
                 ModuleItem::ModuleDecl(mut module_decl) => match &module_decl {
                     // Imports
                     ModuleDecl::Import(_) => {
-                        if self.convert_imports {
+                        if self.runtime_module {
                             module_decl.visit_mut_with(self);
                         } else {
                             module_body.push(module_decl.into());
@@ -164,9 +164,13 @@ impl VisitMut for ModuleCollector {
                     // `export var ...`
                     // `export class ...`
                     // `export function ...`
-                    ModuleDecl::ExportDecl(_) => {
+                    ModuleDecl::ExportDecl(export_decl) => {
+                        if self.runtime_module {
+                            module_body.push(Stmt::Decl(export_decl.decl.clone()).into());
+                        } else {
+                            module_body.push(module_decl.clone().into());
+                        }
                         module_decl.visit_mut_with(self);
-                        module_body.push(module_decl.into());
                     }
                     // `export default function ...`
                     // `export default class ...`
@@ -175,7 +179,9 @@ impl VisitMut for ModuleCollector {
                             .collect_default_export_decl_and_convert_to_stmt(export_default_decl)
                         {
                             module_body.push(export_stmt.into());
-                            module_body.push(self.get_default_export_stmt(ident).into());
+                            if !self.runtime_module {
+                                module_body.push(self.get_default_export_stmt(ident).into());
+                            }
                         } else {
                             module_body.push(module_decl.into());
                         }
@@ -186,23 +192,33 @@ impl VisitMut for ModuleCollector {
                             export_default_expr,
                         );
                         module_body.push(stmt.into());
-                        module_body.push(self.get_default_export_stmt(ident).into());
+                        if !self.runtime_module {
+                            module_body.push(self.get_default_export_stmt(ident).into());
+                        }
                     }
                     // `export { ... }`
                     ModuleDecl::ExportNamed(NamedExport {
                         type_only: false, ..
                     }) => {
                         module_decl.visit_mut_with(self);
-                        module_body.push(module_decl.into());
+                        if !self.runtime_module {
+                            module_body.push(module_decl.into());
+                        }
                     }
                     // `export * from ...`
                     ModuleDecl::ExportAll(ExportAll {
                         type_only: false, ..
                     }) => {
                         module_decl.visit_mut_with(self);
-                        module_body.push(module_decl.into());
+                        if !self.runtime_module {
+                            module_body.push(module_decl.into());
+                        }
                     }
-                    _ => module_body.push(module_decl.into()),
+                    _ => {
+                        if !self.runtime_module {
+                            module_body.push(module_decl.into());
+                        }
+                    }
                 },
             };
         }

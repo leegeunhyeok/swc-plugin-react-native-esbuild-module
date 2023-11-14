@@ -55,13 +55,13 @@ await transform(code, {
       plugins: [
         // Add plugin here.
         ['react-native-esbuild-module-plugin', {
-          // convert import statements to custom module system.
+          // Convert import statements to custom module system and remove export statements
           // Defaults to `false`
-          convertImports: true,
+          runtimeModule: true,
         }],
       ],
     },
-    externalHelpers: false, // You should disable external helpers when convertImport is `true`
+    externalHelpers: false, // You should disable external helpers when runtimeModule is `true`
   },
 });
 ```
@@ -87,7 +87,7 @@ export default class {}
 After
 
 ```js
-// with `convertImport: true`
+// with `runtimeModule: true`
 var React = global.__modules.import("react").default;
 var useState = global.__modules.import("react").useState;
 var useEffect = global.__modules.import("react").useEffect;
@@ -98,12 +98,11 @@ var Text = global.__modules.import("@app/components").Text;
 var useCustomHook = global.__modules.import("@app/hooks").useCustomHook;
 var app = global.__modules.import("@app/core");
 
-export function MyComponent () {
+function MyComponent () {
   // ...
 }
 
 var __export_default = class {}
-export default __export_default;
 
 global.__modules.export("<module-file-name>", {
   "MyComponent": MyComponent,
