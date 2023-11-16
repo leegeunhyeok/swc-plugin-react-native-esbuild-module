@@ -22,6 +22,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var React = global.__modules.import("react").default;
+    global.__modules.export("test.js", null);
     "#
 );
 
@@ -37,6 +38,7 @@ test!(
     r#"
     var useState = global.__modules.import("react").useState;
     var useContext = global.__modules.import("react").useContext;
+    global.__modules.export("test.js", null);
     "#
 );
 
@@ -52,7 +54,8 @@ test!(
     r#"
     var React = global.__modules.import("react").default;
     var useState = global.__modules.import("react").useState;
-    var useContext = global.__modules.import("react").useContext
+    var useContext = global.__modules.import("react").useContext;
+    global.__modules.export("test.js", null);
     "#
 );
 
@@ -67,6 +70,7 @@ test!(
     // Output codes after transformed with plugin
     r#"
     var ReactAll = global.__modules.import("react");
+    global.__modules.export("test.js", null);
     "#
 );
 
@@ -87,5 +91,6 @@ test!(
     var useContext = global.__modules.import("react").useContext;
     function testFn() {}
     class TestClass {}
+    global.__modules.export("test.js", null);
     "#
 );

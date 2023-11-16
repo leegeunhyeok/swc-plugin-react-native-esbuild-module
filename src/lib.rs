@@ -89,6 +89,10 @@ impl ReactNativeEsbuildModule {
     }
 
     fn get_exports_obj_expr(&mut self, exports: Vec<ExportModule>) -> Expr {
+        if exports.len() == 0 {
+            return Expr::Lit(Lit::Null(Null { span: DUMMY_SP }));
+        }
+
         let mut export_props = Vec::new();
         exports.into_iter().for_each(
             |ExportModule {
@@ -152,6 +156,7 @@ impl VisitMut for ReactNativeEsbuildModule {
         let ModuleCollector {
             imports, exports, ..
         } = collector;
+        let is_esm = imports.len() + exports.len() > 0;
 
         // Imports
         imports.into_iter().enumerate().for_each(
@@ -186,7 +191,7 @@ impl VisitMut for ReactNativeEsbuildModule {
         );
 
         // Exports
-        if exports.len() > 0 {
+        if is_esm {
             module
                 .body
                 .push(self.get_custom_exports_stmt(exports).into());

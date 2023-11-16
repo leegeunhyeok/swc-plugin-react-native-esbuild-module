@@ -75,7 +75,10 @@ impl ModuleCollector {
     }
 
     fn get_default_export_stmt(&mut self, ident: Ident) -> ModuleDecl {
-        ModuleDecl::ExportDefaultExpr(ExportDefaultExpr { span: DUMMY_SP, expr: Box::new(Expr::Ident(ident)) })
+        ModuleDecl::ExportDefaultExpr(ExportDefaultExpr {
+            span: DUMMY_SP,
+            expr: Box::new(Expr::Ident(ident)),
+        })
     }
 
     fn collect_default_export_decl_and_convert_to_stmt(
@@ -96,7 +99,7 @@ impl ModuleCollector {
                         ident: fn_ident.to_owned(),
                         function: function.to_owned(),
                         declare: false,
-                    }))
+                    })),
                 ))
             }
             DefaultDecl::Fn(fn_expr) => {
@@ -120,7 +123,7 @@ impl ModuleCollector {
                         ident: class_ident.to_owned(),
                         class: class.to_owned(),
                         declare: false,
-                    }))
+                    })),
                 ))
             }
             DefaultDecl::Class(class_expr) => {
@@ -188,9 +191,8 @@ impl VisitMut for ModuleCollector {
                     }
                     // `export default Identifier`
                     ModuleDecl::ExportDefaultExpr(export_default_expr) => {
-                        let (ident, stmt) = self.collect_default_export_expr_and_convert_to_stmt(
-                            export_default_expr,
-                        );
+                        let (ident, stmt) = self
+                            .collect_default_export_expr_and_convert_to_stmt(export_default_expr);
                         module_body.push(stmt.into());
                         if !self.runtime_module {
                             module_body.push(self.get_default_export_stmt(ident).into());

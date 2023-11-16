@@ -171,6 +171,21 @@ test!(
 test!(
     Default::default(),
     |_| plugin(),
+    non_exports,
+    // Input codes
+    r#"
+    import __dummy from 'dummy';
+    "#,
+    // Output codes after transformed with plugin
+    r#"
+    var __dummy = global.__modules.import("dummy").default;
+    global.__modules.export("test.js", null);
+    "#
+);
+
+test!(
+    Default::default(),
+    |_| plugin(),
     export_mixed,
     // Input codes
     r#"
