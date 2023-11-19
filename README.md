@@ -1,5 +1,8 @@
 # react-native-esbuild-module-plugin
 
+> [!WARNING]
+> THIS PACKAGE IS DEPRECATED. USE [swc-plugin-global-esm](https://github.com/leegeunhyeok/swc-plugin-global-esm) INSTEAD.
+
 Transform module imports statement for [@react-native-esbuild](https://github.com/leegeunhyeok/react-native-esbuild)'s custom module system.
 
 > [!WARNING]
